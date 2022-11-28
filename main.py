@@ -14,7 +14,6 @@ date-created: 2022-11-25
 ### VARIABLES ### 
 import sqlite3
 import pathlib
-import re # regular expressions
 DATABASEFILE = "large mammal population.db"
 
 FIRSTRUN = True 
@@ -43,13 +42,13 @@ def extractFile(FILENAME) -> list:
     for i in range(len(TEXTLIST)):
         if TEXTLIST[i][-1] == "\n":
             TEXTLIST[i] = TEXTLIST[i][:-1] 
-        TEXTLIST[i] = TEXTLIST[i].re.split(r',(?=")') # read docs
+        TEXTLIST[i] = TEXTLIST[i].split(",")
+        # if TEXTLIST[i] ends with " then join with the column before it
         for j in range(len(TEXTLIST[i])):
             if TEXTLIST[i][j].isnumeric():
                 TEXTLIST[i][j] = int(TEXTLIST[i][j])
             if TEXTLIST[i][j] == "NA" or TEXTLIST[i][j] == "":
                 TEXTLIST[i][j] = 0
-    
     return TEXTLIST
 
 # PROCESSING # 
@@ -60,6 +59,61 @@ def setup(CONTENT) -> None:
     :param CONTENT: list
     :return: None
     """
+    global CURSOR, CONNECTION
+
+    CURSOR.execute("""
+        CREATE TABLE
+            large_mammals (
+                area_of_park TEXT,
+                population_year,
+                survey_year,
+                survey_month,
+                survey_day,
+                species_name,
+                unknown_age_and_sex,
+                adult_male_count,
+                adult_female_count,
+                adult_unknown_count,
+                yearling_count,
+                calf_count,
+                survey_total,
+                sightability_correction_factor,
+                additional_captive_count,
+                animals_removed_prior_to_survey,
+                fall_population_estimate,
+                survey_comment,
+                estimate_method
+        );
+    """) # composite key from area_of_part and population_year and species_name
+
+    for i in range(len(CONTENT)):
+        CURSOR.execute("""
+            INSERT INTO
+                large_mammals
+            VALUES (
+                    area_of_park = ?,
+                    population_year = ?,
+                    survey_year = ?,
+                    survey_month = ?,
+                    survey_day = ?,
+                    species_name = ?,
+                    unknown_age_and_sex = ?,
+                    adult_male_count = ?,
+                    adult_female_count = ?,
+                    adult_unknown_count = ?,
+                    yearling_count = ?,
+                    calf_count = ?,
+                    survey_total = ?,
+                    sightability_correction_factor = ?,
+                    additional_captive_count = ?,
+                    animals_removed_prior_to_survey = ?,
+                    fall_population_estimate = ?,
+                    survey_comment = ?,
+                    estimate_method = ?
+            );
+        """, CONTENT[i])
+
+    CONNECTION.commit()
 
 # OUTPUTS #
 
