@@ -42,9 +42,10 @@ def extractFile(FILENAME) -> list:
     for i in range(len(TEXTLIST)):
         if TEXTLIST[i][-1] == "\n":
             TEXTLIST[i] = TEXTLIST[i][:-1] 
-        TEXTLIST[i] = TEXTLIST[i].split(",")
         if '"' in TEXTLIST[i]:
-            TEXTLIST[i] = ",".join([TEXTLIST[i], TEXTLIST[i-1]])
+            TEXTLIST[i] = TEXTLIST[i].split('"')
+        else:
+            TEXTLIST[i] = TEXTLIST[i].split(",")
         for j in range(len(TEXTLIST[i])):
             if TEXTLIST[i][j].isnumeric():
                 TEXTLIST[i][j] = int(TEXTLIST[i][j])
