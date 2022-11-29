@@ -43,12 +43,13 @@ def extractFile(FILENAME) -> list:
         if TEXTLIST[i][-1] == "\n":
             TEXTLIST[i] = TEXTLIST[i][:-1] 
         TEXTLIST[i] = TEXTLIST[i].split(",")
-        # if TEXTLIST[i] ends with " then join with the column before it
+        if '"' in TEXTLIST[i]:
+            TEXTLIST[i] = ",".join([TEXTLIST[i], TEXTLIST[i-1]])
         for j in range(len(TEXTLIST[i])):
             if TEXTLIST[i][j].isnumeric():
                 TEXTLIST[i][j] = int(TEXTLIST[i][j])
             if TEXTLIST[i][j] == "NA" or TEXTLIST[i][j] == "":
-                TEXTLIST[i][j] = 0
+                TEXTLIST[i][j] = None
     return TEXTLIST
 
 # PROCESSING # 
@@ -64,52 +65,53 @@ def setup(CONTENT) -> None:
     CURSOR.execute("""
         CREATE TABLE
             large_mammals (
-                area_of_park TEXT,
-                population_year,
-                survey_year,
-                survey_month,
-                survey_day,
-                species_name,
-                unknown_age_and_sex,
-                adult_male_count,
-                adult_female_count,
-                adult_unknown_count,
-                yearling_count,
-                calf_count,
-                survey_total,
-                sightability_correction_factor,
-                additional_captive_count,
-                animals_removed_prior_to_survey,
-                fall_population_estimate,
-                survey_comment,
-                estimate_method
+                area_of_park TEXT NOT NULL,
+                population_year INTEGER NOT NULL,
+                survey_year INTEGER,
+                survey_month INTEGER,
+                survey_day INTEGER,
+                species_name TEXT NOT NULL,
+                unknown_age_and_sex INTEGER,
+                adult_male_count INTEGER,
+                adult_female_count INTEGER,
+                adult_unknown_count INTEGER,
+                yearling_count INTEGER,
+                calf_count INTEGER,
+                survey_total INTEGER,
+                sightability_correction_factor INTEGER,
+                additional_captive_count INTEGER,
+                animals_removed_prior_to_survey INTEGER,
+                fall_population_estimate INTEGER,
+                survey_comment TEXT,
+                estimate_method TEXT,
+                PRIMARY KEY (area_of_park, population_year, species_name)
         );
-    """) # composite key from area_of_part and population_year and species_name
+    """) # composite key from area_of_park and population_year and species_name
 
     for i in range(len(CONTENT)):
         CURSOR.execute("""
             INSERT INTO
                 large_mammals
             VALUES (
-                    area_of_park = ?,
-                    population_year = ?,
-                    survey_year = ?,
-                    survey_month = ?,
-                    survey_day = ?,
-                    species_name = ?,
-                    unknown_age_and_sex = ?,
-                    adult_male_count = ?,
-                    adult_female_count = ?,
-                    adult_unknown_count = ?,
-                    yearling_count = ?,
-                    calf_count = ?,
-                    survey_total = ?,
-                    sightability_correction_factor = ?,
-                    additional_captive_count = ?,
-                    animals_removed_prior_to_survey = ?,
-                    fall_population_estimate = ?,
-                    survey_comment = ?,
-                    estimate_method = ?
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?
             );
         """, CONTENT[i])
 
