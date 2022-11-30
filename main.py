@@ -26,6 +26,17 @@ CURSOR = CONNECTION.cursor()
 
 # INPUTS # 
 
+def checkInt(VALUE, MAXVALUE):
+    """
+    checks if the value is a valid integer
+    """
+    try:
+        int(VALUE)
+        if VALUE > MAXVALUE:
+            print("Please input a valid number! ")
+    except ValueError:
+        print("Please input a valid number! ")
+
 def extractFile(FILENAME) -> list:
     """
     extract file content and puts it into the database 
@@ -38,20 +49,53 @@ def extractFile(FILENAME) -> list:
     TEXTLIST = FILE.readlines()
     FILE = FILE.close()
 
+    NEWLIST = []
     # clean data 
     for i in range(len(TEXTLIST)):
         if TEXTLIST[i][-1] == "\n":
             TEXTLIST[i] = TEXTLIST[i][:-1] 
-        if '"' in TEXTLIST[i]:
-            TEXTLIST[i] = TEXTLIST[i].split('"')
+        if '"' in TEXTLIST[i+1]:
+            TEXTLIST[i] = TEXTLIST[i].split('"') # split at the quotation so there are 3 nodes
+            TEXTLIST[i][0] = TEXTLIST[i][0].split(",") # split the first node at commas so its a 2d array
+            NEWLIST.append(TEXTLIST[i][0]) # add the first node into the empty array
+            print(NEWLIST[i+1])
+            NEWLIST[i].pop(-1)  
+            NEWLIST[i].append(TEXTLIST[i][1]) # man fuck this 
+            TEXTLIST[i][2] = TEXTLIST[i][2].split(",")
+            NEWLIST[i].append(TEXTLIST[i][2][1])
+            print(NEWLIST[i])
         else:
             TEXTLIST[i] = TEXTLIST[i].split(",")
-        for j in range(len(TEXTLIST[i])):
-            if TEXTLIST[i][j].isnumeric():
-                TEXTLIST[i][j] = int(TEXTLIST[i][j])
-            if TEXTLIST[i][j] == "NA" or TEXTLIST[i][j] == "":
-                TEXTLIST[i][j] = None
-    return TEXTLIST
+            NEWLIST.append(TEXTLIST[i])
+        for j in range(len(NEWLIST[i])):
+            if NEWLIST[i][j].isnumeric():
+                NEWLIST[i][j] = int(NEWLIST[i][j])
+            if NEWLIST[i][j] == "NA" or NEWLIST[i][j] == "":
+                NEWLIST[i][j] = None
+    return NEWLIST
+
+def startScreen() -> None:
+    """
+    displays starting text
+    :return: None
+    """
+    print("Welcome to Elk Island National Park Large Mammal population database! ")
+
+def menu() -> int:
+    """
+    user selects options 
+    :return: int
+    """
+    print("""
+Please choose an option:
+    1. Search Population Growth
+    2. Add new year data
+    3. <New Function!>
+    4. Exit
+    """)
+    CHOICE = input("> ")
+    CHOICE = checkInt(CHOICE, 4)
+    return CHOICE
 
 # PROCESSING # 
 
@@ -125,8 +169,9 @@ if __name__ == "__main__":
 # INPUTS #
     if FIRSTRUN:
         CONTENT = extractFile("Elk_Island_NP_Grassland_Forest_Ungulate_Population_1906-2017_data_reg.csv")
-        print(CONTENT)
         setup(CONTENT)
+    startScreen()
+    CHOICE = menu()
 # PROCESSING # 
 
 # OUPUTS # 
