@@ -54,16 +54,14 @@ def extractFile(FILENAME) -> list:
     for i in range(len(TEXTLIST)):
         if TEXTLIST[i][-1] == "\n":
             TEXTLIST[i] = TEXTLIST[i][:-1] 
-        if '"' in TEXTLIST[i+1]:
+        if '"' in TEXTLIST[i]: # search for a quotation mark 
             TEXTLIST[i] = TEXTLIST[i].split('"') # split at the quotation so there are 3 nodes
-            TEXTLIST[i][0] = TEXTLIST[i][0].split(",") # split the first node at commas so its a 2d array
             NEWLIST.append(TEXTLIST[i][0]) # add the first node into the empty array
-            print(NEWLIST[i+1])
-            NEWLIST[i].pop(-1)  
-            NEWLIST[i].append(TEXTLIST[i][1]) # man fuck this 
+            NEWLIST[i] = NEWLIST[i].split(",") # split the first node at commas so its a 2d array
+            NEWLIST[i].pop(-1) # from the list that has the first 
+            NEWLIST[i].append(TEXTLIST[i][1]) # add the second node (the quotations) 
             TEXTLIST[i][2] = TEXTLIST[i][2].split(",")
             NEWLIST[i].append(TEXTLIST[i][2][1])
-            print(NEWLIST[i])
         else:
             TEXTLIST[i] = TEXTLIST[i].split(",")
             NEWLIST.append(TEXTLIST[i])
