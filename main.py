@@ -42,6 +42,22 @@ def checkInt(VALUE, MINVALUE=0, MAXVALUE=5000):
         NEWVALUE = input("> ")
         return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
     
+def checkValue(VALUE, CORRECTVALUE1="", CORRECTVALUE2="", CORRECTVALUE3=""):
+    """
+    checks if a string has the correct value 
+    :param VALUE: str
+    :param CORRECTVALUE1: str
+    :param CORRECTVALUE2: str
+    :param CORRECTVALUE3: str
+    :return: str
+    """
+    if VALUE is not CORRECTVALUE1 or VALUE is not CORRECTVALUE2 or VALUE is not CORRECTVALUE3:
+        print("Please input a correct value into the database! ")
+        NEWVALUE = input("> ")
+        return checkValue(NEWVALUE, CORRECTVALUE1, CORRECTVALUE2, CORRECTVALUE3)
+    else:
+        return VALUE
+
 
 def extractFile(FILENAME) -> list:
     """
@@ -137,6 +153,15 @@ def getSpecies() -> int:
     SPECIES = input("What species are you searching for, Bison (1), Elk (2), Moose (3), Deer (4) or All (5)? ")
     SPECIES = checkInt(SPECIES, 1, 5)
     return SPECIES
+
+def addNewData():
+    """
+    user adds new year data to the database 
+    :return: None
+    """
+    global CURSOR, CONNECTION
+    AREA = input("Area of park: ")
+    AREA = checkValue(AREA, "North", "South")
 
 # PROCESSING # 
 
