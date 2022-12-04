@@ -26,16 +26,22 @@ CURSOR = CONNECTION.cursor()
 
 # INPUTS # 
 
-def checkInt(VALUE, MAXVALUE):
+def checkInt(VALUE, MINVALUE=0, MAXVALUE=5000):
     """
     checks if the value is a valid integer
     """
     try:
-        int(VALUE)
-        if VALUE > MAXVALUE:
-            print("Please input a valid number! ")
+        VALUE = int(VALUE)
+        if VALUE > MAXVALUE or VALUE < MINVALUE:
+            print("Please input a valid number within the range! ")
+            NEWVALUE = input("> ")
+            return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+        return VALUE
     except ValueError:
         print("Please input a valid number! ")
+        NEWVALUE = input("> ")
+        return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+    
 
 def extractFile(FILENAME) -> list:
     """
@@ -92,8 +98,45 @@ Please choose an option:
     4. Exit
     """)
     CHOICE = input("> ")
-    CHOICE = checkInt(CHOICE, 4)
+    CHOICE = checkInt(CHOICE, 1, 4)
     return CHOICE
+
+def getTimespan() -> int:
+    """
+    user inputs start and end years 
+    :return: STARTYEAR int, ENDYEAR int
+    """
+    global CURSOR
+    MINVALUE = CURSOR.execute("""
+    SELECT
+        population_year
+    FROM
+        large_mammals
+    ORDER BY
+        population_year ASC;
+    """).fetchone()
+    MAXVALUE = CURSOR.execute("""
+    SELECT
+        population_year
+    FROM
+        large_mammals
+    ORDER BY
+        population_year DESC;
+    """).fetchall()
+    STARTYEAR = input("What is the starting year? ")
+    STARTYEAR = checkInt(STARTYEAR, MINVALUE[0], MAXVALUE[1][0])
+    ENDYEAR = input("What is the end year? ")
+    ENDYEAR = checkInt(ENDYEAR, MINVALUE[0], MAXVALUE[1][0])
+    return STARTYEAR, ENDYEAR
+
+def getSpecies() -> int:
+    """
+    user selects species of animal
+    :return: int
+    """
+    SPECIES = input("What species are you searching for, Bison (1), Elk (2), Moose (3), Deer (4) or All (5)? ")
+    SPECIES = checkInt(SPECIES, 1, 5)
+    return SPECIES
 
 # PROCESSING # 
 
@@ -160,7 +203,127 @@ def setup(CONTENT) -> None:
 
     CONNECTION.commit()
 
+def searchYear(YEAR, SPECIES) -> int:
+    """
+    searches the database for the total population of the species during that year
+    :param STARTYEAR: int
+    :param SPECIES: int 
+    :return: int
+    """
+    global CURSOR
+    # need to add north & south populations together 
+    BISON = 0 
+    ELK = 0 
+    MOOSE = 0
+    DEER = 0 
+    DEERLIST = CURSOR.execute(f"""
+            SELECT
+                fall_population_estimate
+            FROM
+                large_mammals
+            WHERE
+                population_year = {YEAR}
+            AND
+                (species_name = "deer" 
+            OR
+                species_name = "Deer");
+        """).fetchall()
+    for i in range(len(DEERLIST)): # add north to south
+        for j in range(len(DEERLIST[i])):
+            DEER = DEERLIST[i][j] + DEER
+    BISONLIST = CURSOR.execute(f"""
+            SELECT
+                fall_population_estimate
+            FROM
+                large_mammals
+            WHERE
+                population_year = {YEAR}
+            AND
+                (species_name = "bison" 
+            OR
+                species_name = "Bison");
+        """).fetchall()
+    for i in range(len(BISONLIST)):
+        for j in range(len(BISONLIST[i])):
+            BISON = BISONLIST[i][j] + BISON
+    ELKLIST = CURSOR.execute(f"""
+            SELECT
+                fall_population_estimate
+            FROM
+                large_mammals
+            WHERE
+                population_year = {YEAR}
+            AND
+                (species_name = "elk" 
+            OR
+                species_name = "Elk");
+        """).fetchall()
+    for i in range(len(ELKLIST)):
+        for j in range(len(ELKLIST[i])):
+            ELK = ELKLIST[i][j] + ELK
+    MOOSELIST = CURSOR.execute(f"""
+            SELECT
+                fall_population_estimate
+            FROM
+                large_mammals
+            WHERE
+                population_year = {YEAR}
+            AND
+                (species_name = "moose" 
+            OR
+                species_name = "Moose");
+        """).fetchall()
+    for i in range(len(MOOSELIST)):
+        for j in range(len(MOOSELIST[i])):
+            MOOSE = MOOSELIST[i][j] + MOOSE
+    if SPECIES == 1: # bison
+        return BISON
+    elif SPECIES == 2: # elk 
+        return ELK
+    elif SPECIES == 3: # moose 
+        return MOOSE
+    elif SPECIES == 4: # deer 
+        return DEER
+    elif SPECIES == 5: # all 
+        ALL = BISON + ELK + MOOSE + DEER
+        return ALL
+
+def calculateGrowth(STARTPOPULATION, ENDPOPULATION, STARTYEAR, ENDYEAR) -> int:
+    """
+    calculate population growth 
+    :param STARTPOPULATION: int
+    :param ENDPOPULATION: int
+    :param STARTYEAR: int 
+    :param ENDYEAR: int
+    :return: int
+    """
+    POPULATION = ENDPOPULATION - STARTPOPULATION
+    TIME = ENDYEAR - STARTYEAR
+    GROWTH = POPULATION / TIME
+    return GROWTH
+
 # OUTPUTS #
+
+def displayGrowth(GROWTH, STARTYEAR, ENDYEAR, SPECIES) -> None:
+    """
+    prints out the population growth per year
+    :param GROWTH: int
+    :return: None
+    """
+    if SPECIES == 1: 
+        ANIMAL = "bison"
+    elif SPECIES == 2: 
+        ANIMAL = "elk"
+    elif SPECIES == 3: 
+        ANIMAL = "moose"
+    elif SPECIES == 4:
+        ANIMAL == "deer"
+    
+    if SPECIES < 5:
+        print(f"The growth rate of {ANIMAL.title()} between {STARTYEAR} and {ENDYEAR} is {round(GROWTH, 2)} {ANIMAL.title()}/year. ")
+    elif SPECIES == 5:
+        print(f"The growth rate of all animals between {STARTYEAR} and {ENDYEAR} is {round(GROWTH, 2)} animals/year. ")
+    return
 
 ### MAIN PROGRAM CODE ###
 if __name__ == "__main__":
@@ -171,5 +334,20 @@ if __name__ == "__main__":
     startScreen()
     CHOICE = menu()
 # PROCESSING # 
-
-# OUPUTS # 
+    if CHOICE == 1:
+        # INPUTS #
+        STARTYEAR, ENDYEAR = getTimespan()
+        SPECIES = getSpecies()
+        # PROCESSING #
+        STARTPOPULATION = searchYear(STARTYEAR, SPECIES)
+        ENDPOPULATION = searchYear(ENDYEAR, SPECIES)
+        GROWTH = calculateGrowth(STARTPOPULATION, ENDPOPULATION, STARTYEAR, ENDYEAR)
+        # OUTPUTS # 
+        displayGrowth(GROWTH, STARTYEAR, ENDYEAR, SPECIES)
+    elif CHOICE == 2:
+        pass
+    elif CHOICE == 3:
+        pass
+# OUTPUTS # 
+    elif CHOICE == 4:
+        exit()
