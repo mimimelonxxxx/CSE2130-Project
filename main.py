@@ -42,7 +42,7 @@ def checkInt(VALUE, MINVALUE=0, MAXVALUE=5000):
         NEWVALUE = input("> ")
         return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
     
-def checkValue(VALUE, CORRECTVALUE1="", CORRECTVALUE2="", CORRECTVALUE3=""):
+def checkValue(VALUE, CORRECTVALUE1="", CORRECTVALUE2="", CORRECTVALUE3="", CORRECTVALUE4=""):
     """
     checks if a string has the correct value 
     :param VALUE: str
@@ -51,7 +51,7 @@ def checkValue(VALUE, CORRECTVALUE1="", CORRECTVALUE2="", CORRECTVALUE3=""):
     :param CORRECTVALUE3: str
     :return: str
     """
-    if VALUE is not CORRECTVALUE1 or VALUE is not CORRECTVALUE2 or VALUE is not CORRECTVALUE3:
+    if VALUE is not CORRECTVALUE1 or VALUE is not CORRECTVALUE2 or VALUE is not CORRECTVALUE3 or VALUE is not CORRECTVALUE4:
         print("Please input a correct value into the database! ")
         NEWVALUE = input("> ")
         return checkValue(NEWVALUE, CORRECTVALUE1, CORRECTVALUE2, CORRECTVALUE3)
@@ -161,7 +161,72 @@ def addNewData():
     """
     global CURSOR, CONNECTION
     AREA = input("Area of park: ")
-    AREA = checkValue(AREA, "North", "South")
+    AREA = checkValue(AREA, "North", "South") # need to make it not "" or null
+    POPULATIONYEAR = input("Population year: ")
+    POPULATIONYEAR = checkInt(POPULATIONYEAR, 1000)
+    SURVEYYEAR = input("Survey year: ")
+    SURVEYYEAR = checkInt(SURVEYYEAR, 1000) # need to also allow for null
+    SURVEYMONTH = input("Survey month: ")
+    SURVEYMONTH = checkInt(SURVEYMONTH, 1, 12) # need to also allow for null
+    SURVEYDAY = input("Survey day: ")
+    SURVEYDAY = checkInt(SURVEYDAY, 1, 31) # need to also allow for null
+    SPECIESNAME = input("Species name: ")
+    SPECIESNAME = checkValue(SPECIESNAME, "Elk", "Bison", "Deer", "Moose") # need to make it not "" or null
+    UNKNOWNAGESEX = input("Unknown age and sex count: ")
+    UNKNOWNAGESEX = checkInt(UNKNOWNAGESEX, 0) # need to also allow for null
+    ADULTMALE = input("Adult male count: ")
+    ADULTMALE = checkInt(ADULTMALE, 0) # need to also allow for null
+    ADULTFEMALE = input("Adult female count: ")
+    ADULTFEMALE = checkInt(ADULTFEMALE, 0) # need to also allow for null
+    ADULTUNKNOWN = input("Adult unknown count: ")
+    ADULTUNKNOWN = checkInt(ADULTUNKNOWN, 0) # need to also allow for null
+    YEARLING = input("Yearling count: ")
+    YEARLING = checkInt(YEARLING, 0) # need to also allow for null
+    CALF = input("Calf count: ")
+    CALF = checkInt(CALF, 0) # need to also allow for null
+    SURVEYTOTAL = input("Survey total: ")
+    SURVEYTOTAL = checkInt(SURVEYTOTAL, 0) # need to also allow for null
+    SIGHTABILITY = input("Sightability correction factor: ")
+    SIGHTABILITY = checkInt(SIGHTABILITY, 0) # need to also allow for null
+    CAPTIVE = input("Additional captive count: ")
+    CAPTIVE = checkInt(CAPTIVE, 0) # need to also allow for null
+    ANIMALSREMOVED = input("Animals removed prior to survey: ")
+    ANIMALSREMOVED = checkInt(ANIMALSREMOVED, 0)
+    POPULATIONESTIMATE = input("Fall population estimate: ")
+    POPULATIONESTIMATE = checkInt(POPULATIONESTIMATE, 0)
+    SURVEYCOMMENT = input("Survey comment: ") # this one can be anything
+    ESTIMATEMETHOD = input("Estimate method: ")
+    ESTIMATEMETHOD = checkValue(ESTIMATEMETHOD, "Ground", "Aerial") # need to make it not "" or null
+    NEWDATA = [AREA, POPULATIONYEAR, SURVEYYEAR, SURVEYMONTH, SURVEYDAY, SPECIESNAME, UNKNOWNAGESEX, ADULTMALE, ADULTFEMALE, ADULTUNKNOWN, YEARLING, CALF, SURVEYTOTAL, SIGHTABILITY, CAPTIVE, ANIMALSREMOVED, POPULATIONESTIMATE, SURVEYCOMMENT, ESTIMATEMETHOD]
+
+    # insert into database 
+    CURSOR.execute("""
+        INSERT INTO
+            large_mammals
+        VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
+        );
+    """, NEWDATA)
+
+    CONNECTION.commit()
 
 # PROCESSING # 
 
