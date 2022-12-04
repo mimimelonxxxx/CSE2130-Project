@@ -26,38 +26,113 @@ CURSOR = CONNECTION.cursor()
 
 # INPUTS # 
 
-def checkInt(VALUE, MINVALUE=0, MAXVALUE=5000):
+def checkInt(VALUE, MINVALUE=0, MAXVALUE=5000, NULLNESS=False) -> int:
     """
     checks if the value is a valid integer
+    :param VALUE: str
+    :param MINVALUE: int
+    :param MAXVALUE: int
+    :param NULLNESS: bool
+    :return: int
     """
-    try:
-        VALUE = int(VALUE)
-        if VALUE > MAXVALUE or VALUE < MINVALUE:
-            print("Please input a valid number within the range! ")
+    if NULLNESS:
+        if VALUE == None or VALUE == "":
+            VALUE = None
+            return VALUE
+        else:
+            try:
+                VALUE = int(VALUE)
+                if VALUE > MAXVALUE or VALUE < MINVALUE:
+                    print("Please input a valid number within the range! ")
+                    NEWVALUE = input("> ")
+                    return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+                return VALUE
+            except ValueError:
+                print("Please input a valid number! ")
+                NEWVALUE = input("> ")
+                return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+    else:
+        try:
+            VALUE = int(VALUE)
+            if VALUE > MAXVALUE or VALUE < MINVALUE:
+                print("Please input a valid number within the range! ")
+                NEWVALUE = input("> ")
+                return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+            return VALUE
+        except ValueError:
+            print("Please input a valid number! ")
             NEWVALUE = input("> ")
             return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
-        return VALUE
-    except ValueError:
+    
+def checkYear(VALUE):
+    """
+    checks if the year is in the list and converts the year into int
+    :param VALUE: str 
+    :return: int
+    """
+    global CURSOR
+    YEARS = CURSOR.execute(f"""
+        SELECT
+            population_year
+        FROM
+            large_mammals
+        WHERE
+            population_year = ?
+    """, [VALUE]).fetchall()
+    if VALUE.isnumeric():
+        VALUE = int(VALUE)
+        if len(YEARS) == 0:
+            print("Please input a valid year within the database! ")
+            NEWVALUE = input("> ")
+            return checkYear(NEWVALUE)
+        else:
+            return VALUE
+    else:
         print("Please input a valid number! ")
         NEWVALUE = input("> ")
-        return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
-    
-def checkValue(VALUE, CORRECTVALUE1="", CORRECTVALUE2="", CORRECTVALUE3="", CORRECTVALUE4=""):
+        return checkYear(NEWVALUE)
+
+def checkValue(VALUE, STATEMENTNUMBER, CORRECTVALUE1, CORRECTVALUE2, CORRECTVALUE3="", CORRECTVALUE4="") -> str:
     """
     checks if a string has the correct value 
     :param VALUE: str
+    :param STATEMENTNUMBER: int
     :param CORRECTVALUE1: str
     :param CORRECTVALUE2: str
     :param CORRECTVALUE3: str
     :return: str
     """
-    if VALUE is not CORRECTVALUE1 or VALUE is not CORRECTVALUE2 or VALUE is not CORRECTVALUE3 or VALUE is not CORRECTVALUE4:
-        print("Please input a correct value into the database! ")
-        NEWVALUE = input("> ")
-        return checkValue(NEWVALUE, CORRECTVALUE1, CORRECTVALUE2, CORRECTVALUE3)
-    else:
-        return VALUE
+    if STATEMENTNUMBER == 2:
+        if (not VALUE == CORRECTVALUE1) and (not VALUE == CORRECTVALUE2):
+            print("Please input a correct value into the database! ")
+            NEWVALUE = input("> ")
+            return checkValue(NEWVALUE, 2, CORRECTVALUE1, CORRECTVALUE2)
+        else:
+            return VALUE
+    elif STATEMENTNUMBER == 4:
+        if (not VALUE == CORRECTVALUE1) and (not VALUE == CORRECTVALUE2) and (not VALUE == CORRECTVALUE3) and (not VALUE == CORRECTVALUE4):
+            print("Please input a correct value into the database! ")
+            NEWVALUE = input("> ")
+            return checkValue(NEWVALUE, 4, CORRECTVALUE1, CORRECTVALUE2, CORRECTVALUE3, CORRECTVALUE4)
+        else:
+            return VALUE
 
+def checkComment(COMMENT):
+    """
+    checks the survey comment for quotation marks
+    :param COMMENT: str
+    :return: str
+    """
+    COMMENTLIST = COMMENT.split('"')
+    if COMMENTLIST[0] == "" and COMMENTLIST[-1] == "":
+        return COMMENT
+    elif COMMENT == "":
+        COMMENT = None
+        return COMMENT
+    else:
+        print("Please include quotation marks around the survey comment! ")
+        NEWCOMMENT = input("Survey comment: ")
+        return checkComment(NEWCOMMENT)
 
 def extractFile(FILENAME) -> list:
     """
@@ -122,27 +197,10 @@ def getTimespan() -> int:
     user inputs start and end years 
     :return: STARTYEAR int, ENDYEAR int
     """
-    global CURSOR
-    MINVALUE = CURSOR.execute("""
-    SELECT
-        population_year
-    FROM
-        large_mammals
-    ORDER BY
-        population_year ASC;
-    """).fetchone()
-    MAXVALUE = CURSOR.execute("""
-    SELECT
-        population_year
-    FROM
-        large_mammals
-    ORDER BY
-        population_year DESC;
-    """).fetchall()
     STARTYEAR = input("What is the starting year? ")
-    STARTYEAR = checkInt(STARTYEAR, MINVALUE[0], MAXVALUE[1][0])
+    STARTYEAR = checkYear(STARTYEAR)
     ENDYEAR = input("What is the end year? ")
-    ENDYEAR = checkInt(ENDYEAR, MINVALUE[0], MAXVALUE[1][0])
+    ENDYEAR = checkYear(ENDYEAR)
     return STARTYEAR, ENDYEAR
 
 def getSpecies() -> int:
@@ -161,72 +219,77 @@ def addNewData():
     """
     global CURSOR, CONNECTION
     AREA = input("Area of park: ")
-    AREA = checkValue(AREA, "North", "South") # need to make it not "" or null
+    AREA = checkValue(AREA, 2, "North", "South")
     POPULATIONYEAR = input("Population year: ")
     POPULATIONYEAR = checkInt(POPULATIONYEAR, 1000)
     SURVEYYEAR = input("Survey year: ")
-    SURVEYYEAR = checkInt(SURVEYYEAR, 1000) # need to also allow for null
+    SURVEYYEAR = checkInt(SURVEYYEAR, 1000, 5000, True) 
     SURVEYMONTH = input("Survey month: ")
-    SURVEYMONTH = checkInt(SURVEYMONTH, 1, 12) # need to also allow for null
+    SURVEYMONTH = checkInt(SURVEYMONTH, 1, 12, True)
     SURVEYDAY = input("Survey day: ")
-    SURVEYDAY = checkInt(SURVEYDAY, 1, 31) # need to also allow for null
+    SURVEYDAY = checkInt(SURVEYDAY, 1, 31, True) 
     SPECIESNAME = input("Species name: ")
-    SPECIESNAME = checkValue(SPECIESNAME, "Elk", "Bison", "Deer", "Moose") # need to make it not "" or null
+    SPECIESNAME = checkValue(SPECIESNAME, 4, "Elk", "Bison", "Deer", "Moose") 
     UNKNOWNAGESEX = input("Unknown age and sex count: ")
-    UNKNOWNAGESEX = checkInt(UNKNOWNAGESEX, 0) # need to also allow for null
+    UNKNOWNAGESEX = checkInt(UNKNOWNAGESEX, 0, 5000, True)
     ADULTMALE = input("Adult male count: ")
-    ADULTMALE = checkInt(ADULTMALE, 0) # need to also allow for null
+    ADULTMALE = checkInt(ADULTMALE, 0, 5000, True) 
     ADULTFEMALE = input("Adult female count: ")
-    ADULTFEMALE = checkInt(ADULTFEMALE, 0) # need to also allow for null
+    ADULTFEMALE = checkInt(ADULTFEMALE, 0, 5000, True) 
     ADULTUNKNOWN = input("Adult unknown count: ")
-    ADULTUNKNOWN = checkInt(ADULTUNKNOWN, 0) # need to also allow for null
+    ADULTUNKNOWN = checkInt(ADULTUNKNOWN, 0, 5000, True)
     YEARLING = input("Yearling count: ")
-    YEARLING = checkInt(YEARLING, 0) # need to also allow for null
+    YEARLING = checkInt(YEARLING, 0, 5000, True) 
     CALF = input("Calf count: ")
-    CALF = checkInt(CALF, 0) # need to also allow for null
+    CALF = checkInt(CALF, 0, 5000, True) 
     SURVEYTOTAL = input("Survey total: ")
-    SURVEYTOTAL = checkInt(SURVEYTOTAL, 0) # need to also allow for null
+    SURVEYTOTAL = checkInt(SURVEYTOTAL, 0, 5000, True)
     SIGHTABILITY = input("Sightability correction factor: ")
-    SIGHTABILITY = checkInt(SIGHTABILITY, 0) # need to also allow for null
+    SIGHTABILITY = checkInt(SIGHTABILITY, 0, 5000, True) 
     CAPTIVE = input("Additional captive count: ")
-    CAPTIVE = checkInt(CAPTIVE, 0) # need to also allow for null
+    CAPTIVE = checkInt(CAPTIVE, 0, 5000, True)
     ANIMALSREMOVED = input("Animals removed prior to survey: ")
-    ANIMALSREMOVED = checkInt(ANIMALSREMOVED, 0)
+    ANIMALSREMOVED = checkInt(ANIMALSREMOVED, 0, 5000, True)
     POPULATIONESTIMATE = input("Fall population estimate: ")
     POPULATIONESTIMATE = checkInt(POPULATIONESTIMATE, 0)
-    SURVEYCOMMENT = input("Survey comment: ") # this one can be anything
+    SURVEYCOMMENT = input("Survey comment: ") 
+    SURVEYCOMMENT = checkComment(SURVEYCOMMENT)
     ESTIMATEMETHOD = input("Estimate method: ")
-    ESTIMATEMETHOD = checkValue(ESTIMATEMETHOD, "Ground", "Aerial") # need to make it not "" or null
+    ESTIMATEMETHOD = checkValue(ESTIMATEMETHOD, 2, "Ground", "Aerial") 
     NEWDATA = [AREA, POPULATIONYEAR, SURVEYYEAR, SURVEYMONTH, SURVEYDAY, SPECIESNAME, UNKNOWNAGESEX, ADULTMALE, ADULTFEMALE, ADULTUNKNOWN, YEARLING, CALF, SURVEYTOTAL, SIGHTABILITY, CAPTIVE, ANIMALSREMOVED, POPULATIONESTIMATE, SURVEYCOMMENT, ESTIMATEMETHOD]
 
     # insert into database 
-    CURSOR.execute("""
-        INSERT INTO
-            large_mammals
-        VALUES (
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?
-        );
-    """, NEWDATA)
-
+    try:
+        CURSOR.execute("""
+            INSERT INTO
+                large_mammals
+            VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            );
+        """, NEWDATA)
+    except sqlite3.IntegrityError:
+        print("Please input valid, unique values into the database! ")
+        return addNewData()
     CONNECTION.commit()
+    print("Data has been added into the database! ")
 
 # PROCESSING # 
 
@@ -259,7 +322,7 @@ def setup(CONTENT) -> None:
                 animals_removed_prior_to_survey INTEGER,
                 fall_population_estimate INTEGER,
                 survey_comment TEXT,
-                estimate_method TEXT,
+                estimate_method TEXT NOT NULL,
                 PRIMARY KEY (area_of_park, population_year, species_name)
         );
     """) # composite key from area_of_park and population_year and species_name
@@ -407,7 +470,7 @@ def displayGrowth(GROWTH, STARTYEAR, ENDYEAR, SPECIES) -> None:
     elif SPECIES == 3: 
         ANIMAL = "moose"
     elif SPECIES == 4:
-        ANIMAL == "deer"
+        ANIMAL = "deer"
     
     if SPECIES < 5:
         print(f"The growth rate of {ANIMAL.title()} between {STARTYEAR} and {ENDYEAR} is {round(GROWTH, 2)} {ANIMAL.title()}/year. ")
@@ -435,7 +498,7 @@ if __name__ == "__main__":
         # OUTPUTS # 
         displayGrowth(GROWTH, STARTYEAR, ENDYEAR, SPECIES)
     elif CHOICE == 2:
-        pass
+        addNewData()
     elif CHOICE == 3:
         pass
 # OUTPUTS # 
