@@ -185,7 +185,7 @@ def menu() -> int:
 Please choose an option:
     1. Search Population Growth
     2. Add new year data
-    3. <New Function!>
+    3. Search for specific age or sex data
     4. Exit
     """)
     CHOICE = input("> ")
@@ -218,6 +218,8 @@ def addNewData():
     :return: None
     """
     global CURSOR, CONNECTION
+
+    # INPUTS # 
     AREA = input("Area of park: ")
     AREA = checkValue(AREA, 2, "North", "South")
     POPULATIONYEAR = input("Population year: ")
@@ -258,6 +260,7 @@ def addNewData():
     ESTIMATEMETHOD = checkValue(ESTIMATEMETHOD, 2, "Ground", "Aerial") 
     NEWDATA = [AREA, POPULATIONYEAR, SURVEYYEAR, SURVEYMONTH, SURVEYDAY, SPECIESNAME, UNKNOWNAGESEX, ADULTMALE, ADULTFEMALE, ADULTUNKNOWN, YEARLING, CALF, SURVEYTOTAL, SIGHTABILITY, CAPTIVE, ANIMALSREMOVED, POPULATIONESTIMATE, SURVEYCOMMENT, ESTIMATEMETHOD]
 
+    # PROCESSING # 
     # insert into database 
     try:
         CURSOR.execute("""
@@ -289,7 +292,36 @@ def addNewData():
         print("Please input valid, unique values into the database! ")
         return addNewData()
     CONNECTION.commit()
+
+    # OUTPUTS # 
     print("Data has been added into the database! ")
+
+def selectData() -> int:
+    """
+    user selects which option to search for
+    :return: int
+    """
+    print("""
+Please select which option to search for:
+    1. Unknown age and sex count 
+    2. Adult male count 
+    3. Adult female count
+    4. Adult unknown count
+    5. Yearling count
+    6. Calf count
+    """)
+    CHOICE = input("> ")
+    CHOICE = checkInt(CHOICE, 1, 6)
+    return CHOICE
+
+def selectYear() -> int:
+    """
+    user selects year from database 
+    :return: int
+    """
+    YEAR = input("What is the year to search from? ")
+    YEAR = checkYear(YEAR)
+    return YEAR
 
 # PROCESSING # 
 
@@ -455,11 +487,49 @@ def calculateGrowth(STARTPOPULATION, ENDPOPULATION, STARTYEAR, ENDYEAR) -> int:
     GROWTH = POPULATION / TIME
     return GROWTH
 
+def searchData(DATA, YEAR) -> int:
+    """
+    searches database for selected data from selected year
+    :param DATA: int
+    :param YEAR: int 
+    :return: int 
+    """
+    global CURSOR
+    if DATA == 1:
+        DATA = "unknown_age_and_sex"
+    elif DATA == 2:
+        DATA = "adult_male_count"
+    elif DATA == 3:
+        DATA = "adult_female_count"
+    elif DATA == 4:
+        DATA = "adult_unknown_count"
+    elif DATA == 5:
+        DATA = "yearling_count"
+    elif DATA == 6: 
+        DATA = "calf_count"
+
+    POPULATION = 0 
+
+    DATALIST = CURSOR.execute(f"""
+        SELECT
+            {DATA}
+        FROM
+            large_mammals
+        WHERE
+            population_year = {YEAR}
+    """).fetchall()
+    for i in range(len(DATALIST)):
+        for j in range(len(DATALIST[i])):
+            if DATALIST[i][j] == None:
+                DATALIST[i][j] = 0
+            POPULATION = DATALIST[i][j] + POPULATION
+    return POPULATION
+
 # OUTPUTS #
 
 def displayGrowth(GROWTH, STARTYEAR, ENDYEAR, SPECIES) -> None:
     """
-    prints out the population growth per year
+    displays the population growth per year
     :param GROWTH: int
     :return: None
     """
@@ -477,6 +547,28 @@ def displayGrowth(GROWTH, STARTYEAR, ENDYEAR, SPECIES) -> None:
     elif SPECIES == 5:
         print(f"The growth rate of all animals between {STARTYEAR} and {ENDYEAR} is {round(GROWTH, 2)} animals/year. ")
     return
+
+def displayData(DATA, POPULATION, YEAR) -> None:
+    """
+    displays the population of the selected age and sex for that year
+    :param DATA: int
+    :param YEAR: int
+    :return: None
+    """
+    if DATA == 1:
+        DATA = "animals with unknown age and sex"
+    elif DATA == 2:
+        DATA = "adult males"
+    elif DATA == 3:
+        DATA = "adult females"
+    elif DATA == 4:
+        DATA = "adults whose ages are unknown"
+    elif DATA == 5:
+        DATA = "yearlings"
+    elif DATA == 6: 
+        DATA = "calves"
+
+    print(f"The number of {DATA} in the year {YEAR} is {POPULATION}. ")
 
 ### MAIN PROGRAM CODE ###
 if __name__ == "__main__":
@@ -500,7 +592,13 @@ if __name__ == "__main__":
     elif CHOICE == 2:
         addNewData()
     elif CHOICE == 3:
-        pass
+        # INPUTS #
+        DATA = selectData()
+        YEAR = selectYear()
+        # PROCESSING # 
+        POPULATION = searchData(DATA, YEAR)
+        # OUTPUTS # 
+        displayData(DATA, POPULATION, YEAR)
 # OUTPUTS # 
     elif CHOICE == 4:
         exit()
