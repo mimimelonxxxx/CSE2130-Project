@@ -45,24 +45,24 @@ def checkInt(VALUE, MINVALUE=0, MAXVALUE=5000, NULLNESS=False) -> int:
                 if VALUE > MAXVALUE or VALUE < MINVALUE:
                     print("Please input a valid number within the range! ")
                     NEWVALUE = input("> ")
-                    return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+                    return checkInt(NEWVALUE, MINVALUE, MAXVALUE, NULLNESS)
                 return VALUE
             except ValueError:
                 print("Please input a valid number! ")
                 NEWVALUE = input("> ")
-                return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+                return checkInt(NEWVALUE, MINVALUE, MAXVALUE, NULLNESS)
     else:
         try:
             VALUE = int(VALUE)
             if VALUE > MAXVALUE or VALUE < MINVALUE:
                 print("Please input a valid number within the range! ")
                 NEWVALUE = input("> ")
-                return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+                return checkInt(NEWVALUE, MINVALUE, MAXVALUE, NULLNESS)
             return VALUE
         except ValueError:
             print("Please input a valid number! ")
             NEWVALUE = input("> ")
-            return checkInt(NEWVALUE, MINVALUE, MAXVALUE)
+            return checkInt(NEWVALUE, MINVALUE, MAXVALUE, NULLNESS)
     
 def checkYear(VALUE):
     """
